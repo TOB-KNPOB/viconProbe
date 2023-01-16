@@ -1,30 +1,26 @@
 import os
+import re
 import xlwt
 import data
 
 class XlsBatch(object):
-
     def __init__(self, worksheet, head, mode='right'):
-
         self.worksheet = worksheet
         self.head = head
         self.contents = []
         self.mode = mode
 
     def move(self, row_add, col_add):
-
         self.row += row_add
         self.col += col_add
         self.update(self.row, self.col)
 
     def move_to(self, row_new, col_new):
-
         self.row = row_new
         self.col = col_new
         self.update(self.row, self.col)
 
     def update(self, row_new, col_new):
-
         if row_new > self.row_end:
             self.row_end = row_new
 
@@ -38,7 +34,6 @@ class XlsBatch(object):
             self.col_start = col_new
 
     def render(self, row, col):
-
         self.row, self.row_start, self.row_end = row, row, row
         self.col, self.col_start, self.col_end = col, col, col
 
@@ -46,9 +41,7 @@ class XlsBatch(object):
         self.move(1, 0)
 
         for content in self.contents:
-
             if type(content) == XlsBatch:
-
                 content.render(self.row, self.col)
 
                 self.update(content.row_start, content.col_start)
@@ -61,41 +54,43 @@ class XlsBatch(object):
                     self.move_to(self.row_end, self.col_start)
 
             else:
-
                 for data in content:
                     self.worksheet.write(self.row, self.col, data)
                     self.move(1, 0)
 
 
-def load(path, ViconDataClass, params=[]):
-    files = os.listdir(path)
-    files.sort()
+def load(path, ViconDataClass, *params):
+    folders = os.listdir(path)
+    folders.sort()
     subjects = {}
 
-    for file in files:
-
-        if '.DS_Store' in file:
-            continue
-
-        name, condition = file.replace('.csv', '').split(' ', maxsplit=1)
-
+    for name in folders:  
+        if '.DS_Store' in name:
+                continue
+        
         if name not in subjects:
-            subjects[name] = {}
+                subjects[name] = {}
 
-        subjects[name][condition] = ViconDataClass(path + '/' + file, *params)
-        print('{} has been loaded'.format(file))
+        files = os.listdir(os.path.join(path, name))
+        files.sort()
+
+        for file in files:
+            if '.DS_Store' in file:
+                continue
+
+            condition = re.search('[a-zA-Z\- ]*[a-zA-Z]', file).group()
+            filepath = os.path.join(path, name, file)
+            subjects[name][condition] = ViconDataClass(filepath, *params)
+            print('{} has been loaded'.format(file))
 
     return subjects
 
 
 def format_save(subjects, params, mode, save_path):
-
     for name in subjects:
-
         workbook = xlwt.Workbook(encoding='ascii')
 
         for param in params:
-
             worksheet = workbook.add_sheet(param, cell_overwrite_ok=True)
 
             param_batch = XlsBatch(worksheet, param)
@@ -104,7 +99,6 @@ def format_save(subjects, params, mode, save_path):
             param_batch.contents.append(subject_batch)
 
             for condition in subjects[name]:
-
                 condition_batch = XlsBatch(worksheet, condition)
                 subject_batch.contents.append(condition_batch)
 
@@ -116,7 +110,6 @@ def format_save(subjects, params, mode, save_path):
 
                 try:
                     for gait_num in range(len(data)):
-
                         gait_batch = XlsBatch(worksheet, 'Gait ' + str(gait_num))
                         condition_batch.contents.append(gait_batch)
 
@@ -200,17 +193,9 @@ if __name__ == "__main__":
         'RPelvisAngles'
     ]
 
-    subjects = load('subjects', data.ViconData_interp, [100, 50])
-
-    # subjects = load('subjects', data.ViconData)
-
+    subjects = load('subjects', data.ViconData)
+    # subjects = load('subjects', data.ViconData_interp, 100, 50)
+    
     format_save(subjects, joints, 'joints', 'outputs')
     format_save(subjects, model_outputs, 'model_outputs', 'outputs')
-
-    '''
-    # Show file names.
-    files = os.listdir('subjects')
-    files.sort()
-    for file in files:
-        print(file)
-    '''
+    

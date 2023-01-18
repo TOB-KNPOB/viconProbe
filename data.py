@@ -58,7 +58,7 @@ class ViconData(object):
                         event_data = list(map(float, event_data))
                         gaits[m][param_name][sub_param_name] = event_data
 
-                return gaits
+            return gaits
         
         except:
             print("Warning: unexpected error happens when parsing {}\nPlease check data completeness".format(self.path))
@@ -95,10 +95,6 @@ class ViconData_interp(ViconData):
 
 
 if __name__ == "__main__":
-    path = 'subjects/LeeMingFai Barefoot Walking Platform_1.csv'
-    # data = ViconData(path)
+    path = 'subjects/zhaoloon/fast speed 1.csv'
     data = ViconData_interp(path, 100, 50)
-
-    print(data.joints[0]['L_Collar_L_Humerus']['RX'])
-    print(data.joints[1]['LowerBack_Head']['RY'])
-    print(data.model_outputs[9]['LGroundReactionForce']['X'])
+    print(data.model_outputs[0]['LAnkleAngles']['X'])

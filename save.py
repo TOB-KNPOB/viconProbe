@@ -78,7 +78,7 @@ def load(path, ViconDataClass, *params):
             if '.DS_Store' in file:
                 continue
 
-            condition = re.search('[a-zA-Z\- ]*[a-zA-Z]', file).group()
+            condition = re.search('[^.]*', file).group()
             filepath = os.path.join(path, name, file)
             subjects[name][condition] = ViconDataClass(filepath, *params)
             print('{} has been loaded'.format(file))
@@ -114,13 +114,13 @@ def format_save(subjects, params, mode, save_path):
                         condition_batch.contents.append(gait_batch)
 
                         for sub_param in data[gait_num][param]:
-
                             sub_param_batch = XlsBatch(worksheet, sub_param)
                             gait_batch.contents.append(sub_param_batch)
                             sub_param_batch.contents.append(data[gait_num][param][sub_param])
 
                 except:
                     print('Warning: {} - {} - {} of subject {} seems broken'.format(condition, mode, param, name))
+                    print(data[gait_num].keys())
 
             param_batch.render(0, 0)
 
@@ -152,7 +152,7 @@ if __name__ == "__main__":
         'Root_L_Femur',
         'Root_LowerBack',
         'Root_R_Femur',
-        'World_Root'
+        'World_Root',
     ]
 
     model_outputs = [
@@ -190,12 +190,12 @@ if __name__ == "__main__":
         'RKneeMoment',
         'RKneePower',
         'RNormalisedGRF',
-        'RPelvisAngles'
+        'RPelvisAngles',
     ]
 
-    subjects = load('subjects', data.ViconData)
-    # subjects = load('subjects', data.ViconData_interp, 100, 50)
+    # subjects = load('subjects', data.ViconData)
+    subjects = load('subjects', data.ViconData_interp, 100, 50)
     
-    format_save(subjects, joints, 'joints', 'outputs')
+    # format_save(subjects, joints, 'joints', 'outputs')
     format_save(subjects, model_outputs, 'model_outputs', 'outputs')
     

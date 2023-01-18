@@ -1,4 +1,48 @@
+# gitignore
+
+# system file
 .DS_Store
+.idea/
+
 __pycache__/
-subjects/
-outputs/
+
+# raw data
+media/
+dataset/
+data/
+param/
+*.csv
+
+# binary file
+*.png
+*.jpg
+*.gif
+*.mov
+*.pdf
+*.xls
+*.xlsx
+
+# latex related
+build/
+*.aux
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+*.synctex.gz
+*.toc.vrb
+*.vrb
+*.bbl
+*.bcf
+*.run.xml
+*.blg
+
+*cls
+*xdy
+*gz
+
+# rendered html docs
+docs/build/
+docs/build/doctrees/
+docs/build/latex/

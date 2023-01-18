@@ -21,18 +21,20 @@ class ViconData(object):
 
         self.events = []
         for n in range(0, int(len(events_index)), 2):
-            self.events.append((float(self.doc.loc[events_index[n], 3]) * 100,
-                                float(self.doc.loc[events_index[n + 1], 3]) * 100))
+            self.events.append((float(self.doc.loc[events_index[n], 3]),
+                                float(self.doc.loc[events_index[n + 1], 3])))
 
     def analyse_param(self, symbol):
         row_start = int(self.doc[self.doc[0] == symbol].index.tolist()[0]) + 5
         frame_start = int(self.doc.loc[row_start, 0])
+        output_rate = int(self.doc.loc[row_start - 4, 0])
 
-        def frame2row(frame):
+        def time2row(time):
+            frame = time * output_rate
             return row_start + frame - frame_start
 
         def event_extract(start, end, col_name):
-            data = self.doc.loc[frame2row(start): frame2row(end), col_name].tolist()
+            data = self.doc.loc[time2row(start): time2row(end), col_name].tolist()
             return self.data_process(data)
 
         param_list = self.doc.loc[row_start - 3, :].tolist()

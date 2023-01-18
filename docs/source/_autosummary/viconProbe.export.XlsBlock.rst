@@ -1,9 +1,9 @@
-viconProbe.export.XlsBatch
+viconProbe.export.XlsBlock
 ==========================
 
 .. currentmodule:: viconProbe.export
 
-.. autoclass:: XlsBatch
+.. autoclass:: XlsBlock
    :members:
    :show-inheritance:
    :private-members:
@@ -17,11 +17,11 @@ viconProbe.export.XlsBatch
 
    .. autosummary::
    
-      ~XlsBatch.__init__
-      ~XlsBatch.move
-      ~XlsBatch.move_to
-      ~XlsBatch.render
-      ~XlsBatch.update
+      ~XlsBlock.__init__
+      ~XlsBlock.move
+      ~XlsBlock.move_to
+      ~XlsBlock.render
+      ~XlsBlock.update
    
    
 

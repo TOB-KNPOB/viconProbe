@@ -15,7 +15,7 @@ viconProbe.export
       :toctree:
       :template: custom-class-template.rst
    
-      XlsBatch
+      XlsBlock
    
    
 
@@ -35,7 +35,7 @@ viconProbe.export
    .. autosummary::
       :toctree:
    
-      format_save
+      export_gait_attrs
    
    
 

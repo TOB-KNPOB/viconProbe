@@ -1,3 +1,3 @@
 # viconProbe
 
-Data analysis framework for [Vicon] motion capture system.
+Data analysis framework for [Vicon](https://www.vicon.com) motion capture system.

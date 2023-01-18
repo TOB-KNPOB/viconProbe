@@ -18,9 +18,9 @@ viconProbe.data.ViconData\_interp
    .. autosummary::
    
       ~ViconData_interp.__init__
-      ~ViconData_interp.analyse_event
-      ~ViconData_interp.analyse_param
+      ~ViconData_interp.batch_retrieve
       ~ViconData_interp.data_process
+      ~ViconData_interp.gait_retrieve
    
    
 

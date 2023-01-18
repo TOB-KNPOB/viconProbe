@@ -1,7 +1,7 @@
-viconProbe.save.XlsBatch
-========================
+viconProbe.export.XlsBatch
+==========================
 
-.. currentmodule:: viconProbe.save
+.. currentmodule:: viconProbe.export
 
 .. autoclass:: XlsBatch
    :members:

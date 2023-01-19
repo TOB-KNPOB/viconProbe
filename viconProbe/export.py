@@ -121,28 +121,37 @@ class XlsBlock(object):
 
 
 def export_gait_attrs(subjects: dict, batch: str, params: list, export_folder: str = 'outputs'):
-    """Export the gait parameters data to :code:`.xls` file.
+    """Export the gait parameters data to :code:`.xls` files.
 
-    - Every parameter stores in a sheet of :code:`.xls` file.
+    - Every subject export a :code:`.xls` file.
+    - Every parameter stores in a sheet of the :code:`.xls` file.
     - In every sheet, data is arranged in the form of:
 
     .. list-table:: Data Sheet Format
        :header-rows: 1
     
        * - Subject A
-         - Subject B
+         - 
+         - 
+         - 
+       * - Parameter 1
+         - 
+         - 
+         - 
+       * - Gait 1 data
+         - Gait 2 data
+         - Gait 3 data
          - \.\.\.
-       * - | Parameter 1
-           | Gaits 1 data, 2 data, etc.
-         - | Parameter 2
-           | Gaits 1 data, 2 data, etc.
-         - \.\.\.
-       * - | Parameter 1
-           | Gaits 1 data, 2 data, etc.
-         - | Parameter 2
-           | Gaits 1 data, 2 data, etc.
+       * - Parameter 2
+         - 
+         - 
+         - 
+       * - Gait 1 data
+         - Gait 2 data
+         - Gait 3 data
          - \.\.\.
        * - \.\.\.
+         - \.\.\.
          - \.\.\.
          - \.\.\.
 
@@ -245,22 +254,21 @@ def export_gait_attrs(subjects: dict, batch: str, params: list, export_folder: s
                 subject_batch.contents.append(condition_batch)
                 data = subjects[name][condition].attrs[batch]
 
-                try:
-                    for gait_num in range(len(data)):
-                        gait_batch = XlsBlock(worksheet, 'Gait ' + str(gait_num))
-                        condition_batch.contents.append(gait_batch)
+                for gait_num in range(len(data)):
+                    gait_batch = XlsBlock(worksheet, 'Gait ' + str(gait_num))
+                    condition_batch.contents.append(gait_batch)
 
+                    if param not in data[gait_num].keys():
+                        print("Warning: {} - {} - {} not found".format(name, condition, param))
+
+                    else:
                         for sub_param in data[gait_num][param]:
                             sub_param_batch = XlsBlock(worksheet, sub_param)
                             gait_batch.contents.append(sub_param_batch)
                             sub_param_batch.contents.append(data[gait_num][param][sub_param])
 
-                except:
-                    print('Warning: {} - {} - {} of subject {} seems broken'.format(name, condition, param))
-                    print(data[gait_num].keys())
-
             param_batch.render(0, 0)
 
-        save_file = "{}/{}.xls".format(export_folder, batch)
+        save_file = "{}/{} - {}.xls".format(export_folder, name, batch)
         workbook.save(save_file)
         print('/{} has been outputed'.format(save_file))

@@ -19,6 +19,12 @@ class ViconData(object):
         :class:`list` a list of the data batches to be loaded. For example: ::
 
             batches = ['Joints', 'Model Outputs']
+    max_col
+        the number of columns to be loaded.
+
+        Warning
+        ---
+        Since different data batches in the :code:`.csv` files exported from Vicon have different column numbers, the number of columns to be loaded needs to be manually set. :attr:`max_col` is set as :code:`500` in default and needs to be carefully revised if necessary.
 
     Note
     ---
@@ -26,7 +32,7 @@ class ViconData(object):
     
     self.path
         path of the exported :code:`.csv` Vicon analysis documents.
-    self.doc
+    self.df
         :class:`pandas.DataFrame` loaded from :code:`.csv` Vicon analysis documents.
     self.attrs
         :class:`dict` of data batches. For example: ::
@@ -38,10 +44,24 @@ class ViconData(object):
 
             [(gait_1_start_time, gait_1_end_time), (gait_2_start_time, gait_2_end_time), ...]
     """
-    def __init__(self, path: str, batches: list, **kwargs):
+    def __init__(self, path: str, batches: list, max_col: int = 500, **kwargs):
         self.path = path
-        col_names = [n for n in range(500)]
-        self.doc = pd.read_csv(path, header=None, names=col_names, low_memory=False)
+
+        # inactivate low_memory due to mixture data type
+        try:
+            self.df = pd.read_csv(
+                self.path, 
+                names=[n for n in range(max_col)],
+                low_memory=False
+            )
+        
+        # sometimes it raise issue, in this case activate low_memory
+        except:
+            self.df = pd.read_csv(
+                self.path, 
+                names=[n for n in range(max_col)],
+                low_memory=True
+            )
 
         self.gait_retrieve()
         self.attrs = {}
@@ -56,13 +76,16 @@ class ViconData(object):
         ---
         Every pair of :code:`Foot Strike` is deemed the start and end of a gait, regardless of what is before, after, and inserted between them.
         """
-        events_index = self.doc[self.doc[2] == 'Foot Strike'] \
-            .index.tolist()
+        events_indexes = df_match_indexes(self.df, 'Foot Strike')
+        events_rows = events_indexes[0]
+        events_cols = events_indexes[1]
 
         self.timestamps = []
-        for n in range(0, int(len(events_index)), 2):
-            self.timestamps.append((float(self.doc.loc[events_index[n], 3]),
-                                float(self.doc.loc[events_index[n + 1], 3])))
+        for n in range(0, int(len(events_rows)), 2):
+            self.timestamps.append((
+                float(self.df.loc[events_rows[n], events_cols[n] + 1]),
+                float(self.df.loc[events_rows[n + 1], events_cols[n] + 1]),
+            ))
 
     def batch_retrieve(self, batch: str) -> list:
         """Retrieve all parameters that belongs to different gaits from a batch of data.
@@ -79,12 +102,12 @@ class ViconData(object):
             
                 return_var[gait_idx][param_name][sub_param_name]
         """
-        row_start = int(self.doc[self.doc[0] == batch].index.tolist()[0]) + 5
-        frame_start = int(self.doc.loc[row_start, 0])
-        output_rate = int(self.doc.loc[row_start - 4, 0])
+        row_start = df_first_match_row(self.df, batch) + 5
+        frame_start = int(self.df.loc[row_start, 0])
+        output_rate = int(self.df.loc[row_start - 4, 0])
 
         def time2row(time: float) -> int:
-            """Transform a time value to the row index in :attr:`self.doc`."""
+            """Transform a time value to the row index in :attr:`self.df`."""
             frame = time * output_rate
             row = int(row_start + frame - frame_start)
             if row < row_start:
@@ -94,15 +117,15 @@ class ViconData(object):
 
         def gait_extract(start: int, end: int, col_name: str) -> list:
             """Extract the data of :code:`col_name` column from the :code:`start` row to the :code:`end` row."""
-            data = self.doc.loc[time2row(start): time2row(end), col_name].tolist()
+            data = self.df.loc[time2row(start): time2row(end), col_name].tolist()
             return self.data_process(data)
 
-        param_list = self.doc.loc[row_start - 3, :].tolist()
-        sub_param_list = self.doc.loc[row_start - 2, :].tolist()
+        param_list = self.df.loc[row_start - 3, :].tolist()
+        sub_param_list = self.df.loc[row_start - 2, :].tolist()
+
+        gaits = [{} for n in range(len(self.timestamps))]
 
         try:
-            gaits = [{} for n in range(len(self.timestamps))]
-
             for n in range(2, len(param_list)):
                 if type(param_list[n]) == str:
                     param_name = param_list[n].split(':')[1]
@@ -121,7 +144,7 @@ class ViconData(object):
             return gaits
         
         except:
-            print("Warning: unexpected error happens when parsing {}\nPlease check data completeness".format(self.path))
+            print("Warning: unexpected error happens when parsing {}".format(self.path))
 
     def data_process(self, data: list) -> list:
         """Post-processing of data.
@@ -160,7 +183,7 @@ class ViconData_interp(ViconData):
     def __init__(self, point_num: int = 100, threshold_num: int = 50, **kwargs):
         self.point_num = point_num
         self.threshold_num = threshold_num
-        super(ViconData_interp, self).__init__(**kwargs)
+        ViconData.__init__(self, **kwargs)
 
     def data_process(self, data: list) -> list:
         """resample the input data to the same length.
@@ -191,6 +214,81 @@ class ViconData_interp(ViconData):
         data_new = func_interp(x_new)
 
         return data_new
+
+
+def df_match_indexes(df: pd.DataFrame, symbol: str) -> tuple:
+    """Get the indexes of matched cells of a :mod:`pandas` data frame.
+    
+    Parameters
+    ---
+    df
+        :mod:`pandas` data frame.
+    symbol
+        the string to be matched.
+
+    Returns
+    ---
+    :class:`tuple`
+        a tuple with lists of matched cells' row indexes and column indexes as its two elements.
+    """
+    indexes = np.where(df == symbol)
+    return indexes
+
+def df_first_match_index(df: pd.DataFrame, symbol: str) -> tuple:
+    """Get the first matched cell's index from a :mod:`pandas` data frame.
+    
+    Parameters
+    ---
+    df
+        :mod:`pandas` data frame.
+    symbol
+        the string to be matched.
+
+    Returns
+    ---
+    :class:`tuple`
+        a tuple with the first matched cell's row and column indexes.
+    """
+    indexes = df_match_indexes(df, symbol)
+    return (indexes[0][0], indexes[1][0])
+
+
+def df_first_match_row(df: pd.DataFrame, symbol: str) -> int:
+    """Get the first matched cell's row index from a :mod:`pandas` data frame.
+    
+    Parameters
+    ---
+    df
+        :mod:`pandas` data frame.
+    symbol
+        the string to be matched.
+
+    Returns
+    ---
+    :class:`tuple`
+        the first matched cell's row indexes.
+    """
+    index = df_first_match_index(df, symbol)
+    return index[0]
+
+
+def df_first_match_col(df: pd.DataFrame, symbol: str) -> int:
+    """Get the first matched cell's column index from a :mod:`pandas` data frame.
+    
+    Parameters
+    ---
+    df
+        :mod:`pandas` data frame.
+    symbol
+        the string to be matched.
+
+    Returns
+    ---
+    :class:`tuple`
+        the first matched cell's column indexes.
+    """
+    index = df_first_match_index(df, symbol)
+    return index[1]
 
 
 def load(folder: str, batches: str, vicon_data_class: Type[ViconData], **kwargs) -> list:
@@ -240,6 +338,6 @@ def load(folder: str, batches: str, vicon_data_class: Type[ViconData], **kwargs)
             condition = re.search('[^.]*', file).group()
             filepath = os.path.join(folder, name, file)
             subjects[name][condition] = vicon_data_class(path=filepath, batches=batches, **kwargs)
-            print('{} has been loaded'.format(file))
+            print('{}/{} has been loaded'.format(name, file))
 
     return subjects

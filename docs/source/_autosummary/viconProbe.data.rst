@@ -1,4 +1,4 @@
-viconProbe.data
+﻿viconProbe.data
 ===============
 
 .. automodule:: viconProbe.data
@@ -36,6 +36,10 @@ viconProbe.data
    .. autosummary::
       :toctree:
    
+      df_first_match_col
+      df_first_match_index
+      df_first_match_row
+      df_match_indexes
       load
    
    

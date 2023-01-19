@@ -52,7 +52,7 @@ params_model_outputs = [
 
 # load subjects data and export the assembled parameters
 subjects = data.load(
-    folder='../viconProbe/subjects', 
+    folder='viconProbe/subjects', 
     batches=['Model Outputs'], 
     vicon_data_class=data.ViconData_interp, 
     point_num=100,
@@ -63,5 +63,5 @@ export.export_gait_attrs(
     subjects=subjects,
     batch='Model Outputs', 
     params=params_model_outputs,
-    export_folder='../viconProbe/outputs',
+    export_folder='viconProbe/outputs',
 )
